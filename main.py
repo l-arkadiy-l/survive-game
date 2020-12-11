@@ -31,7 +31,7 @@ class Hard_Enemy(pygame.sprite.Sprite):
         self.image.fill(pygame.Color('red'))
         self.rect = self.image.get_rect()
         self.x, self.y = Vector2(pos)
-        self.speed = 5
+        self.speed = 10
         self.move_up = False
 
     def move(self, player):
@@ -40,17 +40,20 @@ class Hard_Enemy(pygame.sprite.Sprite):
         dist = math.hypot(dx, dy)
         dx, dy = dx / dist, dy / dist
         # move along this normalized vector towards the player at current speed
-        if WIDTH >= self.x >= 0 >= 0 and self.y <= HEIGHT and not self.move_up:
+        if not self.move_up:
             self.x -= dx * self.speed
             self.y -= dy * self.speed
+            if self.x <= 0 or self.y <= 0 or self.x >= WIDTH or self.y >= HEIGHT:
+                self.move_up = True
+            print(self.x, self.y)
         else:
             self.move_up = True
             self.x += dx * self.speed
             self.y += dy * self.speed
-            if WIDTH >= self.x >= 0 >= 0 and self.y <= HEIGHT:
-                pass
-            else:
+            if self.x <= 0 or self.y <= 0 or self.x >= WIDTH or self.y >= HEIGHT:
                 self.move_up = False
+            print(self.x <= 0 or self.y <= 0 or self.x >= WIDTH or self.y >= HEIGHT)
+
 
 
 class Hero(pygame.sprite.Sprite):
