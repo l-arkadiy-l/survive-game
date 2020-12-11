@@ -4,6 +4,26 @@ from pygame.math import Vector2
 import math
 
 
+class DrawMap(pygame.sprite.Sprite):
+    def __init__(self, *group):
+        super(DrawMap, self).__init__(*group)
+        self.map = MAP
+        self.cell_size = 100
+        self.cell_size_objects = self.cell_size // 2
+
+    def render(self, offset):
+        # draw map
+        for i in range(len(self.map)):
+            for j in range(len(self.map[0])):
+                if self.map[i][j] == 1:
+                    rect = pygame.Rect(j * self.cell_size, i * self.cell_size, self.cell_size, self.cell_size)
+                    pygame.draw.rect(screen, pygame.Color('white'), (rect.topleft + offset, rect.size), 1)
+                elif self.map[i][j] == 2:
+                    rect = pygame.Rect(j * self.cell_size, i * self.cell_size, self.cell_size_objects,
+                                       self.cell_size_objects)
+                    pygame.draw.rect(screen, pygame.Color('orange'), (rect.topleft + offset, rect.size), 1)
+
+
 class Hard_Enemy(pygame.sprite.Sprite):
     def __init__(self, pos, *groups):
         super(Hard_Enemy, self).__init__(*groups)  # initial position
@@ -13,8 +33,6 @@ class Hard_Enemy(pygame.sprite.Sprite):
         self.x, self.y = Vector2(pos)
         self.speed = 5
         self.move_up = False
-        self.move_left = False
-        self.move_right = False
 
     def move(self, player):
         # find normalized direction vector (dx, dy) between enemy and player
@@ -22,10 +40,17 @@ class Hard_Enemy(pygame.sprite.Sprite):
         dist = math.hypot(dx, dy)
         dx, dy = dx / dist, dy / dist
         # move along this normalized vector towards the player at current speed
-        self.x -= dx * self.speed
-        self.y -= dy * self.speed
-
-        print(self.x, self.y)
+        if WIDTH >= self.x >= 0 >= 0 and self.y <= HEIGHT and not self.move_up:
+            self.x -= dx * self.speed
+            self.y -= dy * self.speed
+        else:
+            self.move_up = True
+            self.x += dx * self.speed
+            self.y += dy * self.speed
+            if WIDTH >= self.x >= 0 >= 0 and self.y <= HEIGHT:
+                pass
+            else:
+                self.move_up = False
 
 
 class Hero(pygame.sprite.Sprite):
@@ -71,25 +96,26 @@ SIZE = pygame.FULLSCREEN
 screen = pygame.display.set_mode((0, 0), SIZE)
 WIDTH = screen.get_width()
 HEIGHT = screen.get_height()
+MAP = [[int(j) for j in i.split()] for i in open('maps/map.txt').read().split('\n') if i != ' ' and i != '\n']
+
+all_sprites = pygame.sprite.Group()
+hero = Hero((WIDTH // 2, HEIGHT // 2), all_sprites)
+enemy = Hard_Enemy((0, 0), all_sprites)
+lab = DrawMap(all_sprites)
 
 
 def main():
     pygame.init()
-    clock = pygame.time.Clock()
     camera = Vector2(WIDTH // 2, HEIGHT // 2)
-    all_sprites = pygame.sprite.Group()
-    hero = Hero((WIDTH // 2, HEIGHT // 2), all_sprites)
-    enemy = Hard_Enemy((0, 0), all_sprites)
+    clock = pygame.time.Clock()
     # green rects
-    background_rects = [pygame.Rect(randrange(-2000, 2001), randrange(-3000, 3001), 30, 10) for _ in range(200)]
+    background_rects = [pygame.Rect(randrange(-2000, 2001), randrange(-3000, 3001), 30, 10) for _ in range(10)]
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return
-
             hero.handle_event(event)
         all_sprites.update()
-
         # A vector that points from the camera to the player.
         heading = hero.pos - camera
         # Follow the player with the camera.
@@ -100,6 +126,7 @@ def main():
         screen.fill((30, 30, 30))
         # Blit all objects and add the offset to their positions.
         enemy.move(hero)
+        lab.render(offset)
         for background_rect in background_rects:
             if hero.rect.colliderect(background_rect):
                 hero.dollars += 1
@@ -110,6 +137,7 @@ def main():
                 pygame.draw.rect(screen, pygame.Color('green'), (topleft, background_rect.size))
         screen.blit(hero.image, hero.rect.topleft + offset)
         screen.blit(enemy.image, (enemy.x, enemy.y))
+
         pygame.display.flip()
         clock.tick(60)
 
