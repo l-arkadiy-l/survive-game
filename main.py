@@ -9,6 +9,8 @@ class DrawMap(pygame.sprite.Sprite):
         super(DrawMap, self).__init__(*group)
         self.map = MAP
         self.cell_size = 100
+        self.width = len(self.map[0]) * self.cell_size
+        self.height = len(self.map) * self.cell_size
         self.cell_size_objects = self.cell_size // 2
 
     def render(self, offset):
@@ -27,11 +29,11 @@ class DrawMap(pygame.sprite.Sprite):
 class Hard_Enemy(pygame.sprite.Sprite):
     def __init__(self, pos, *groups):
         super(Hard_Enemy, self).__init__(*groups)  # initial position
-        self.image = pygame.Surface((50, 50))
+        self.image = pygame.Surface((50, 100))
         self.image.fill(pygame.Color('red'))
         self.rect = self.image.get_rect()
         self.x, self.y = Vector2(pos)
-        self.speed = 10
+        self.speed = 30
         self.move_up = False
 
     def move(self, player):
@@ -45,15 +47,12 @@ class Hard_Enemy(pygame.sprite.Sprite):
             self.y -= dy * self.speed
             if self.x <= 0 or self.y <= 0 or self.x >= WIDTH or self.y >= HEIGHT:
                 self.move_up = True
-            print(self.x, self.y)
         else:
             self.move_up = True
             self.x += dx * self.speed
             self.y += dy * self.speed
             if self.x <= 0 or self.y <= 0 or self.x >= WIDTH or self.y >= HEIGHT:
                 self.move_up = False
-            print(self.x <= 0 or self.y <= 0 or self.x >= WIDTH or self.y >= HEIGHT)
-
 
 
 class Hero(pygame.sprite.Sprite):
@@ -78,6 +77,7 @@ class Hero(pygame.sprite.Sprite):
                 self.vel.y = -self.speed
             if event.key == pygame.K_s:
                 self.vel.y = self.speed
+
         # hero can't slide
         elif event.type == pygame.KEYUP:
             if event.key == pygame.K_d and self.vel.x > 0:
@@ -103,8 +103,9 @@ MAP = [[int(j) for j in i.split()] for i in open('maps/map.txt').read().split('\
 
 all_sprites = pygame.sprite.Group()
 hero = Hero((WIDTH // 2, HEIGHT // 2), all_sprites)
-enemy = Hard_Enemy((0, 0), all_sprites)
 lab = DrawMap(all_sprites)
+enemy = Hard_Enemy((0, 0), all_sprites)
+
 
 
 def main():
@@ -112,7 +113,9 @@ def main():
     camera = Vector2(WIDTH // 2, HEIGHT // 2)
     clock = pygame.time.Clock()
     # green rects
-    background_rects = [pygame.Rect(randrange(-2000, 2001), randrange(-3000, 3001), 30, 10) for _ in range(10)]
+    background_rects = [
+        pygame.Rect(randrange(0, lab.width - lab.cell_size), randrange(0, lab.height - lab.cell_size), 30, 10) for _ in
+        range(10)]
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -140,7 +143,9 @@ def main():
                 pygame.draw.rect(screen, pygame.Color('green'), (topleft, background_rect.size))
         screen.blit(hero.image, hero.rect.topleft + offset)
         screen.blit(enemy.image, (enemy.x, enemy.y))
-
+        font = pygame.font.Font(None, 36)
+        text = font.render(f'dollars: {hero.dollars}', True, pygame.Color('green'))
+        screen.blit(text, (0, 0))
         pygame.display.flip()
         clock.tick(60)
 
