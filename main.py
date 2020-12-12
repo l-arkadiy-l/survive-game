@@ -13,17 +13,18 @@ class DrawMap(pygame.sprite.Sprite):
         self.height = len(self.map) * self.cell_size
         self.cell_size_objects = self.cell_size // 2
 
-    def render(self, offset):
+    def render(self, offset, only_decorations=False):
         # draw map
         for i in range(len(self.map)):
             for j in range(len(self.map[0])):
-                if self.map[i][j] == 1:
+                if self.map[i][j] == 1 and not only_decorations:
                     rect = pygame.Rect(j * self.cell_size, i * self.cell_size, self.cell_size, self.cell_size)
                     pygame.draw.rect(screen, pygame.Color('white'), (rect.topleft + offset, rect.size), 1)
                 elif self.map[i][j] == 2:
                     rect = pygame.Rect(j * self.cell_size, i * self.cell_size, self.cell_size_objects,
                                        self.cell_size_objects)
                     pygame.draw.rect(screen, pygame.Color('orange'), (rect.topleft + offset, rect.size), 1)
+
 
 
 class Hard_Enemy(pygame.sprite.Sprite):
@@ -63,7 +64,7 @@ class Hero(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=pos)
         self.pos = Vector2(pos)
         self.vel = Vector2(0, 0)
-        self.speed = 7
+        self.speed = 9
         self.dollars = 0
 
     def handle_event(self, event):
@@ -102,9 +103,10 @@ HEIGHT = screen.get_height()
 MAP = [[int(j) for j in i.split()] for i in open('maps/map.txt').read().split('\n') if i != ' ' and i != '\n']
 
 all_sprites = pygame.sprite.Group()
-hero = Hero((WIDTH // 2, HEIGHT // 2), all_sprites)
+start_coords = WIDTH // 2, HEIGHT // 2
+hero = Hero(start_coords, all_sprites)
 lab = DrawMap(all_sprites)
-enemy = Hard_Enemy((0, 0), all_sprites)
+# enemy = Hard_Enemy((0, 0), all_sprites)
 
 
 
@@ -131,18 +133,21 @@ def main():
         offset = -camera + Vector2(WIDTH // 2, HEIGHT // 2)  # centering player
         screen.fill((30, 30, 30))
         # Blit all objects and add the offset to their positions.
-        enemy.move(hero)
-        lab.render(offset)
+        # enemy.move(hero)
+        if camera.x - start_coords[0] < lab.cell_size or camera.y - start_coords[-1] < lab.cell_size:
+            lab.render(offset)
+        else:
+            lab.render(offset, True)
         for background_rect in background_rects:
             if hero.rect.colliderect(background_rect):
                 hero.dollars += 1
                 background_rects.remove(background_rect)
-                background_rects.append(pygame.Rect(randrange(-2000, 2001), randrange(-3000, 3001), 30, 10))
+                background_rects.append(pygame.Rect(randrange(0, lab.width - lab.cell_size), randrange(0, lab.height - lab.cell_size), 30, 10))
             else:
                 topleft = background_rect.topleft + offset
                 pygame.draw.rect(screen, pygame.Color('green'), (topleft, background_rect.size))
         screen.blit(hero.image, hero.rect.topleft + offset)
-        screen.blit(enemy.image, (enemy.x, enemy.y))
+        # screen.blit(enemy.image, (enemy.x, enemy.y))
         font = pygame.font.Font(None, 36)
         text = font.render(f'dollars: {hero.dollars}', True, pygame.Color('green'))
         screen.blit(text, (0, 0))
