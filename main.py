@@ -1,4 +1,6 @@
 from random import randrange
+from os import path
+
 import pygame
 from pygame.math import Vector2
 import math
@@ -24,7 +26,11 @@ class DrawMap(pygame.sprite.Sprite):
                     rect = pygame.Rect(j * self.cell_size, i * self.cell_size, self.cell_size_objects,
                                        self.cell_size_objects)
                     pygame.draw.rect(screen, pygame.Color('orange'), (rect.topleft + offset, rect.size), 1)
-
+                elif self.map[i][j] == 3:
+                    # portal
+                    rect = pygame.Rect(j * self.cell_size, i * self.cell_size, self.cell_size_objects,
+                                       self.cell_size_objects)
+                    pygame.draw.rect(screen, pygame.Color('blue'), (rect.topleft + offset, rect.size))
 
 
 class Hard_Enemy(pygame.sprite.Sprite):
@@ -96,6 +102,8 @@ class Hero(pygame.sprite.Sprite):
         self.rect.center = self.pos
 
 
+pygame.init()
+pygame.mixer.init()
 SIZE = pygame.FULLSCREEN
 screen = pygame.display.set_mode((0, 0), SIZE)
 WIDTH = screen.get_width()
@@ -106,12 +114,13 @@ all_sprites = pygame.sprite.Group()
 start_coords = WIDTH // 2, HEIGHT // 2
 hero = Hero(start_coords, all_sprites)
 lab = DrawMap(all_sprites)
+take_dollar = pygame.mixer.Sound("sounds/take_dollar")
+
+
 # enemy = Hard_Enemy((0, 0), all_sprites)
 
 
-
 def main():
-    pygame.init()
     camera = Vector2(WIDTH // 2, HEIGHT // 2)
     clock = pygame.time.Clock()
     # green rects
@@ -134,15 +143,20 @@ def main():
         screen.fill((30, 30, 30))
         # Blit all objects and add the offset to their positions.
         # enemy.move(hero)
-        if camera.x - start_coords[0] < lab.cell_size or camera.y - start_coords[-1] < lab.cell_size:
+        # ДОРАБОТАТЬ !!!!
+        if (camera.x - start_coords[0] <= lab.cell_size or camera.y - start_coords[-1] <= lab.cell_size) or \
+                camera.x - start_coords[0] >= WIDTH or camera.y - start_coords[-1] >= HEIGHT:
             lab.render(offset)
         else:
             lab.render(offset, True)
         for background_rect in background_rects:
             if hero.rect.colliderect(background_rect):
+                take_dollar.play()
                 hero.dollars += 1
                 background_rects.remove(background_rect)
-                background_rects.append(pygame.Rect(randrange(0, lab.width - lab.cell_size), randrange(0, lab.height - lab.cell_size), 30, 10))
+                background_rects.append(
+                    pygame.Rect(randrange(0, lab.width - lab.cell_size), randrange(0, lab.height - lab.cell_size), 30,
+                                10))
             else:
                 topleft = background_rect.topleft + offset
                 pygame.draw.rect(screen, pygame.Color('green'), (topleft, background_rect.size))
