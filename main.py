@@ -145,7 +145,7 @@ def main():
         # enemy.move(hero)
         # ДОРАБОТАТЬ !!!!
         if (camera.x - start_coords[0] <= lab.cell_size or camera.y - start_coords[-1] <= lab.cell_size) or \
-                camera.x - start_coords[0] >= WIDTH or camera.y - start_coords[-1] >= HEIGHT:
+                (camera.x - start_coords[0] >= WIDTH or camera.y >= HEIGHT):
             lab.render(offset)
         else:
             lab.render(offset, True)
