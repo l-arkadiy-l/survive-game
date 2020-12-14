@@ -116,11 +116,10 @@ class Hero(pygame.sprite.Sprite):
 
 
 def render_rects():
-    return  [
+    return [
         pygame.Rect(randrange(lab.cell_size, lab.width - lab.cell_size),
                     randrange(lab.cell_size, lab.height - lab.cell_size), 30, 10) for _ in
         range(10)]
-
 
 
 pygame.init()
