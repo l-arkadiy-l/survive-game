@@ -76,6 +76,7 @@ class Hero(pygame.sprite.Sprite):
     def handle_event(self, event):
         # Move player
         if event.type == pygame.KEYDOWN:
+            self.update()
             if event.key == pygame.K_d:
                 self.vel.x = self.speed
             if event.key == pygame.K_a:
@@ -95,6 +96,18 @@ class Hero(pygame.sprite.Sprite):
                 self.vel.y = 0
             elif event.key == pygame.K_s:
                 self.vel.y = 0
+            # x
+            if self.pos.x + self.vel.x - self.rect.width >= lab.width - lab.cell_size - self.rect.width:
+                self.pos.x = lab.width - self.rect.width // 2 - lab.cell_size
+
+            if self.pos.x + self.vel.x - self.rect.width <= lab.cell_size:
+                self.pos.x = self.rect.width // 2 + lab.cell_size
+            # y
+            if self.pos.y + self.vel.y >= lab.height - lab.cell_size - self.rect.height // 2:
+                self.pos.y = lab.height - (self.rect.height // 2 + lab.cell_size)
+
+            if self.pos.y + self.vel.y <= lab.cell_size + self.rect.height // 2:
+                self.pos.y = self.rect.height // 2 + lab.cell_size
 
     def update(self):
         # Move the player.
@@ -125,7 +138,7 @@ def main():
     clock = pygame.time.Clock()
     # green rects
     background_rects = [
-        pygame.Rect(randrange(0, lab.width - lab.cell_size), randrange(0, lab.height - lab.cell_size), 30, 10) for _ in
+        pygame.Rect(randrange(0, lab.width - lab.cell_size * 2), randrange(0, lab.height - lab.cell_size * 2), 30, 10) for _ in
         range(10)]
     while True:
         for event in pygame.event.get():
@@ -143,7 +156,6 @@ def main():
         screen.fill((30, 30, 30))
         # Blit all objects and add the offset to their positions.
         # enemy.move(hero)
-        # ДОРАБОТАТЬ !!!!
         if (camera.x - start_coords[0] <= lab.cell_size or camera.y - start_coords[-1] <= lab.cell_size) or \
                 (camera.x - start_coords[0] >= WIDTH or camera.y >= HEIGHT):
             lab.render(offset)
@@ -155,7 +167,8 @@ def main():
                 hero.dollars += 1
                 background_rects.remove(background_rect)
                 background_rects.append(
-                    pygame.Rect(randrange(0, lab.width - lab.cell_size), randrange(0, lab.height - lab.cell_size), 30,
+                    pygame.Rect(randrange(0, lab.width - lab.cell_size * 2),
+                                randrange(0, lab.height - lab.cell_size * 2), 30,
                                 10))
             else:
                 topleft = background_rect.topleft + offset
