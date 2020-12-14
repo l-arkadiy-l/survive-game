@@ -1,5 +1,4 @@
 from random import randrange
-from os import path
 
 import pygame
 from pygame.math import Vector2
@@ -7,9 +6,10 @@ import math
 
 
 class DrawMap(pygame.sprite.Sprite):
-    def __init__(self, *group):
+    def __init__(self, place, *group):
         super(DrawMap, self).__init__(*group)
-        self.map = MAP
+        self.map = [[int(j) for j in i.split()] for i in open('maps/{}'.format(place)).read().split('\n') if
+                    i != ' ' and i != '\n']
         self.cell_size = 100
         self.width = len(self.map[0]) * self.cell_size
         self.height = len(self.map) * self.cell_size
@@ -115,18 +115,25 @@ class Hero(pygame.sprite.Sprite):
         self.rect.center = self.pos
 
 
+def render_rects():
+    return  [
+        pygame.Rect(randrange(lab.cell_size, lab.width - lab.cell_size),
+                    randrange(lab.cell_size, lab.height - lab.cell_size), 30, 10) for _ in
+        range(10)]
+
+
+
 pygame.init()
 pygame.mixer.init()
 SIZE = pygame.FULLSCREEN
 screen = pygame.display.set_mode((0, 0), SIZE)
 WIDTH = screen.get_width()
 HEIGHT = screen.get_height()
-MAP = [[int(j) for j in i.split()] for i in open('maps/map.txt').read().split('\n') if i != ' ' and i != '\n']
 
 all_sprites = pygame.sprite.Group()
 start_coords = WIDTH // 2, HEIGHT // 2
 hero = Hero(start_coords, all_sprites)
-lab = DrawMap(all_sprites)
+lab = DrawMap('map.txt', all_sprites)
 take_dollar = pygame.mixer.Sound("sounds/take_dollar")
 
 
@@ -136,16 +143,25 @@ take_dollar = pygame.mixer.Sound("sounds/take_dollar")
 def main():
     camera = Vector2(WIDTH // 2, HEIGHT // 2)
     clock = pygame.time.Clock()
+    teleportation = False
     # green rects
-    background_rects = [
-        pygame.Rect(randrange(0, lab.width - lab.cell_size * 2), randrange(0, lab.height - lab.cell_size * 2), 30, 10) for _ in
-        range(10)]
+    background_rects = render_rects()
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return
             hero.handle_event(event)
         all_sprites.update()
+        # room teleport
+        if 23 <= hero.pos.x // lab.cell_size <= 26 and 3 <= hero.pos.y // lab.cell_size <= 5 and not teleportation:
+            lab.map = [[int(j) for j in i.split()] for i in open('maps/map_weapoons.txt').read().split('\n') if
+                       i != ' ' and i != '\n']
+            lab.width = len(lab.map[0]) * lab.cell_size
+            lab.height = len(lab.map) * lab.cell_size
+            hero.pos.x = 0
+            hero.pos.y = 0
+            teleportation = True
+            background_rects = render_rects()
         # A vector that points from the camera to the player.
         heading = hero.pos - camera
         # Follow the player with the camera.
