@@ -72,6 +72,8 @@ class Hero(pygame.sprite.Sprite):
         self.vel = Vector2(0, 0)
         self.speed = 9
         self.dollars = 0
+        self.health = 3
+        self.image_health =pygame.image.load('images/health.png')
 
     def handle_event(self, event):
         # Move player
@@ -190,9 +192,11 @@ def main():
                 pygame.draw.rect(screen, pygame.Color('green'), (topleft, background_rect.size))
         screen.blit(hero.image, hero.rect.topleft + offset)
         # screen.blit(enemy.image, (enemy.x, enemy.y))
+        for i in range(hero.health):
+            screen.blit(pygame.transform.scale(hero.image_health, (70, 70)), (i * 80, 0))
         font = pygame.font.Font(None, 36)
-        text = font.render(f'dollars: {hero.dollars}', True, pygame.Color('green'))
-        screen.blit(text, (0, 0))
+        text = font.render(f'score: {hero.dollars}', True, pygame.Color('green'))
+        screen.blit(text, (0, HEIGHT - 36))
         pygame.display.flip()
         clock.tick(60)
 
