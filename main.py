@@ -3,6 +3,7 @@ from random import randrange
 import pygame
 from pygame.math import Vector2
 import math
+import sqlite3
 
 
 class DrawMap(pygame.sprite.Sprite):
@@ -73,7 +74,7 @@ class Hero(pygame.sprite.Sprite):
         self.speed = 9
         self.dollars = 0
         self.health = 3
-        self.image_health =pygame.image.load('images/health.png')
+        self.image_health = pygame.image.load('images/health.png')
 
     def handle_event(self, event):
         # Move player
@@ -136,9 +137,41 @@ start_coords = WIDTH // 2, HEIGHT // 2
 hero = Hero(start_coords, all_sprites)
 lab = DrawMap('map.txt', all_sprites)
 take_dollar = pygame.mixer.Sound("sounds/take_dollar")
+# data base
+con = sqlite3.connect('score.db')
+cur = con.cursor()
+cur.execute('CREATE TABLE IF NOT EXISTS score('
+            'max_score INT'
+            ')')
+con.commit()
+result = cur.execute('SELECT max_score FROM score').fetchone()
 
 
 # enemy = Hard_Enemy((0, 0), all_sprites)
+def start_screen():
+    if not result:
+        intro_text = ["ЗАСТАВКА", "",
+                      "Правила игры:",
+                      "Собирайте монеты и убивате врагов.",
+                      "Ваш рекорд: 0"]
+    else:
+        intro_text = ["ЗАСТАВКА", "",
+                      "Правила игры:",
+                      "Собирайте монеты и убивате врагов.",
+                      "Ваш рекорд: {}".format(result[0])]
+
+    fon = pygame.transform.scale(pygame.image.load('images/fon.png'), (WIDTH, HEIGHT))
+    screen.blit(fon, (0, 0))
+    font = pygame.font.Font(None, 30)
+    text_coord = 0
+    for line in intro_text:
+        string_rendered = font.render(line, 1, pygame.Color('green'))
+        intro_rect = string_rendered.get_rect()
+        text_coord += 10
+        intro_rect.top = text_coord
+        intro_rect.x = 10
+        text_coord += intro_rect.height
+        screen.blit(string_rendered, intro_rect)
 
 
 def main():
@@ -147,60 +180,75 @@ def main():
     teleportation = False
     # green rects
     background_rects = render_rects()
+    intro_show = True
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return
-            hero.handle_event(event)
-        all_sprites.update()
-        # room teleport
-        if 23 <= hero.pos.x // lab.cell_size <= 26 and 3 <= hero.pos.y // lab.cell_size <= 5 and not teleportation:
-            lab.map = [[int(j) for j in i.split()] for i in open('maps/map_weapoons.txt').read().split('\n') if
-                       i != ' ' and i != '\n']
-            lab.width = len(lab.map[0]) * lab.cell_size
-            lab.height = len(lab.map) * lab.cell_size
-            hero.pos.x = 0
-            hero.pos.y = 0
-            teleportation = True
-            background_rects = render_rects()
-        # A vector that points from the camera to the player.
-        heading = hero.pos - camera
-        # Follow the player with the camera.
-        # Move the camera by a fraction of the heading vector's length.
-        camera += heading * 0.05
-        # The actual offset that we have to add to the positions of the objects.
-        offset = -camera + Vector2(WIDTH // 2, HEIGHT // 2)  # centering player
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                intro_show = False
+            if not intro_show:
+                hero.handle_event(event)
         screen.fill((30, 30, 30))
-        # Blit all objects and add the offset to their positions.
-        # enemy.move(hero)
-        if (camera.x - start_coords[0] <= lab.cell_size or camera.y - start_coords[-1] <= lab.cell_size) or \
-                (camera.x - start_coords[0] >= WIDTH or camera.y >= HEIGHT):
-            lab.render(offset)
-        else:
-            lab.render(offset, True)
-        for background_rect in background_rects:
-            if hero.rect.colliderect(background_rect):
-                take_dollar.play()
-                hero.dollars += 1
-                background_rects.remove(background_rect)
-                background_rects.append(
-                    pygame.Rect(randrange(0, lab.width - lab.cell_size * 2),
-                                randrange(0, lab.height - lab.cell_size * 2), 30,
-                                10))
+        if not intro_show:
+            all_sprites.update()
+            # room teleport
+            if 23 <= hero.pos.x // lab.cell_size <= 26 and 3 <= hero.pos.y // lab.cell_size <= 5 and not teleportation:
+                lab.map = [[int(j) for j in i.split()] for i in open('maps/map_weapoons.txt').read().split('\n') if
+                           i != ' ' and i != '\n']
+                lab.width = len(lab.map[0]) * lab.cell_size
+                lab.height = len(lab.map) * lab.cell_size
+                hero.pos.x = 0
+                hero.pos.y = 0
+                teleportation = True
+                background_rects = render_rects()
+            # A vector that points from the camera to the player.
+            heading = hero.pos - camera
+            # Follow the player with the camera.
+            # Move the camera by a fraction of the heading vector's length.
+            camera += heading * 0.05
+            # The actual offset that we have to add to the positions of the objects.
+            offset = -camera + Vector2(WIDTH // 2, HEIGHT // 2)  # centering player
+
+            # Blit all objects and add the offset to their positions.
+            # enemy.move(hero)
+            if (camera.x - start_coords[0] <= lab.cell_size or camera.y - start_coords[-1] <= lab.cell_size) or \
+                    (camera.x - start_coords[0] >= WIDTH or camera.y >= HEIGHT):
+                lab.render(offset)
             else:
-                topleft = background_rect.topleft + offset
-                pygame.draw.rect(screen, pygame.Color('green'), (topleft, background_rect.size))
-        screen.blit(hero.image, hero.rect.topleft + offset)
-        # screen.blit(enemy.image, (enemy.x, enemy.y))
-        for i in range(hero.health):
-            screen.blit(pygame.transform.scale(hero.image_health, (70, 70)), (i * 80, 0))
-        font = pygame.font.Font(None, 36)
-        text = font.render(f'score: {hero.dollars}', True, pygame.Color('green'))
-        screen.blit(text, (0, HEIGHT - 36))
+                lab.render(offset, True)
+            for background_rect in background_rects:
+                if hero.rect.colliderect(background_rect):
+                    take_dollar.play()
+                    hero.dollars += 1
+                    background_rects.remove(background_rect)
+                    background_rects.append(
+                        pygame.Rect(randrange(0, lab.width - lab.cell_size * 2),
+                                    randrange(0, lab.height - lab.cell_size * 2), 30,
+                                    10))
+                else:
+                    topleft = background_rect.topleft + offset
+                    pygame.draw.rect(screen, pygame.Color('green'), (topleft, background_rect.size))
+            screen.blit(hero.image, hero.rect.topleft + offset)
+            # screen.blit(enemy.image, (enemy.x, enemy.y))
+            for i in range(hero.health):
+                screen.blit(pygame.transform.scale(hero.image_health, (70, 70)), (i * 80, 0))
+            font = pygame.font.Font(None, 36)
+            text = font.render(f'score: {hero.dollars}', True, pygame.Color('green'))
+            screen.blit(text, (0, HEIGHT - 36))
+        else:
+            start_screen()
         pygame.display.flip()
         clock.tick(60)
 
 
 if __name__ == '__main__':
     main()
+    if not result:
+        cur.execute('INSERT INTO score VALUES ({})'.format(hero.dollars))
+    elif hero.dollars > result[0]:
+        print('here')
+        print(result)
+        cur.execute("UPDATE score SET max_score = {} WHERE max_score = {}".format(hero.dollars, result[0]))
+    con.commit()
     pygame.quit()
