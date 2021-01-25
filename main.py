@@ -93,8 +93,6 @@ class Hero(pygame.sprite.Sprite):
             if event.key == pygame.K_s:
                 self.vel.y = self.speed
 
-
-
         # player can't slide
         elif event.type == pygame.KEYUP:
             hero.image = pygame.image.load('images/Personaj_1.png')
@@ -207,10 +205,10 @@ def start_screen():
 def main():
     camera = Vector2(WIDTH // 2, HEIGHT // 2)
     clock = pygame.time.Clock()
-    teleportation = False
     # green rects
     background_rects = render_rects()
     intro_show = True
+    first_map = True
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -223,14 +221,24 @@ def main():
         if not intro_show:
             all_sprites.update()
             # room teleport
-            if 23 <= hero.pos.x // lab.cell_size <= 26 and 3 <= hero.pos.y // lab.cell_size <= 5 and not teleportation:
-                lab.map = [[int(j) for j in i.split()] for i in open('maps/map_weapoons.txt').read().split('\n') if
+            if first_map and 23 <= hero.pos.x // lab.cell_size <= 26 and 3 <= hero.pos.y // lab.cell_size <= 5:
+                lab.map = [[int(j) for j in i.split()] for i in open('maps/second_map.txt').read().split('\n') if
                            i != ' ' and i != '\n']
                 lab.width = len(lab.map[0]) * lab.cell_size
                 lab.height = len(lab.map) * lab.cell_size
                 hero.pos.x = 0
                 hero.pos.y = 0
-                teleportation = True
+                background_rects = render_rects()
+                first_map = False
+
+            elif not first_map and 31 <= hero.pos.x // lab.cell_size <= 37 and 7 <= hero.pos.y // lab.cell_size <= 10:
+                lab.map = [[int(j) for j in i.split()] for i in open('maps/map.txt').read().split('\n') if
+                           i != ' ' and i != '\n']
+                lab.width = len(lab.map[0]) * lab.cell_size
+                lab.height = len(lab.map) * lab.cell_size
+                hero.pos.x = 0
+                hero.pos.y = 0
+                first_map = True
                 background_rects = render_rects()
             # A vector that points from the camera to the player.
             heading = hero.pos - camera
@@ -277,8 +285,6 @@ if __name__ == '__main__':
     if not result:
         cur.execute('INSERT INTO score VALUES ({})'.format(hero.dollars))
     elif hero.dollars > result[0]:
-        print('here')
-        print(result)
         cur.execute("UPDATE score SET max_score = {} WHERE max_score = {}".format(hero.dollars, result[0]))
     con.commit()
     pygame.quit()
