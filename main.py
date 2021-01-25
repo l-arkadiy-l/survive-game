@@ -71,15 +71,19 @@ class Hero(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=pos)
         self.pos = Vector2(pos)
         self.vel = Vector2(0, 0)
-        self.speed = 9
+        self.speed = 15
         self.dollars = 0
         self.health = 3
+        self.anim_right = 0
+        self.anim_kick = 0
         self.image_health = pygame.image.load('images/health.png')
+        self.move_right = True
+        # enemy health -= 4
+        self.damage = 4
 
     def handle_event(self, event):
         # Move player
         if event.type == pygame.KEYDOWN:
-            self.update()
             if event.key == pygame.K_d:
                 self.vel.x = self.speed
             if event.key == pygame.K_a:
@@ -89,8 +93,10 @@ class Hero(pygame.sprite.Sprite):
             if event.key == pygame.K_s:
                 self.vel.y = self.speed
 
-        # hero can't slide
+        # player can't slide
         elif event.type == pygame.KEYUP:
+            hero.image = pygame.image.load('images/Personaj_1.png')
+            self.anim_right = 0
             if event.key == pygame.K_d and self.vel.x > 0:
                 self.vel.x = 0
             elif event.key == pygame.K_a and self.vel.x < 0:
@@ -116,6 +122,24 @@ class Hero(pygame.sprite.Sprite):
         # Move the player.
         self.pos += self.vel
         self.rect.center = self.pos
+        keystate = pygame.key.get_pressed()
+        if keystate[pygame.K_d]:
+            self.move_right = True
+            self.anim_right = (self.anim_right + 1) % len(animate_right)
+            self.image = pygame.image.load(animate_right[self.anim_right])
+        elif keystate[pygame.K_a]:
+            self.move_right = False
+            self.anim_right = (self.anim_right + 1) % len(animate_right)
+            # change the image.
+            self.image = pygame.transform.flip(pygame.image.load(animate_right[self.anim_right]), True, False)
+        if keystate[pygame.K_q]:
+            self.anim_kick = (self.anim_kick + 1) % len(animate_kick)
+            if self.move_right:
+                self.image = pygame.image.load(animate_kick[self.anim_kick])
+            else:
+                self.image = pygame.transform.flip(pygame.image.load(animate_kick[self.anim_kick]), True, False)
+                # align image
+                self.rect.x -= 75
 
 
 def render_rects():
@@ -145,6 +169,10 @@ cur.execute('CREATE TABLE IF NOT EXISTS score('
             ')')
 con.commit()
 result = cur.execute('SELECT max_score FROM score').fetchone()
+# sprites
+animate_right = ['images/anim_right_1.png', 'images/anim_right_2.png', 'images/anim_right_3.png', 'images'
+                                                                                                  '/anim_right_4.png']
+animate_kick = ['images/anim_kick_1.png', 'images/anim_kick_2.png']
 
 
 # enemy = Hard_Enemy((0, 0), all_sprites)
@@ -177,10 +205,10 @@ def start_screen():
 def main():
     camera = Vector2(WIDTH // 2, HEIGHT // 2)
     clock = pygame.time.Clock()
-    teleportation = False
     # green rects
     background_rects = render_rects()
     intro_show = True
+    first_map = True
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -193,14 +221,24 @@ def main():
         if not intro_show:
             all_sprites.update()
             # room teleport
-            if 23 <= hero.pos.x // lab.cell_size <= 26 and 3 <= hero.pos.y // lab.cell_size <= 5 and not teleportation:
-                lab.map = [[int(j) for j in i.split()] for i in open('maps/map_weapoons.txt').read().split('\n') if
+            if first_map and 23 <= hero.pos.x // lab.cell_size <= 26 and 3 <= hero.pos.y // lab.cell_size <= 5:
+                lab.map = [[int(j) for j in i.split()] for i in open('maps/second_map.txt').read().split('\n') if
                            i != ' ' and i != '\n']
                 lab.width = len(lab.map[0]) * lab.cell_size
                 lab.height = len(lab.map) * lab.cell_size
                 hero.pos.x = 0
                 hero.pos.y = 0
-                teleportation = True
+                background_rects = render_rects()
+                first_map = False
+
+            elif not first_map and 31 <= hero.pos.x // lab.cell_size <= 37 and 7 <= hero.pos.y // lab.cell_size <= 10:
+                lab.map = [[int(j) for j in i.split()] for i in open('maps/map.txt').read().split('\n') if
+                           i != ' ' and i != '\n']
+                lab.width = len(lab.map[0]) * lab.cell_size
+                lab.height = len(lab.map) * lab.cell_size
+                hero.pos.x = 0
+                hero.pos.y = 0
+                first_map = True
                 background_rects = render_rects()
             # A vector that points from the camera to the player.
             heading = hero.pos - camera
@@ -239,7 +277,7 @@ def main():
         else:
             start_screen()
         pygame.display.flip()
-        clock.tick(60)
+        clock.tick(30)
 
 
 if __name__ == '__main__':
@@ -247,8 +285,6 @@ if __name__ == '__main__':
     if not result:
         cur.execute('INSERT INTO score VALUES ({})'.format(hero.dollars))
     elif hero.dollars > result[0]:
-        print('here')
-        print(result)
         cur.execute("UPDATE score SET max_score = {} WHERE max_score = {}".format(hero.dollars, result[0]))
     con.commit()
     pygame.quit()
