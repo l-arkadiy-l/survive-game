@@ -71,15 +71,15 @@ class Hero(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=pos)
         self.pos = Vector2(pos)
         self.vel = Vector2(0, 0)
-        self.speed = 9
+        self.speed = 15
         self.dollars = 0
         self.health = 3
+        self.counter = 0
         self.image_health = pygame.image.load('images/health.png')
 
     def handle_event(self, event):
         # Move player
         if event.type == pygame.KEYDOWN:
-            self.update()
             if event.key == pygame.K_d:
                 self.vel.x = self.speed
             if event.key == pygame.K_a:
@@ -89,8 +89,10 @@ class Hero(pygame.sprite.Sprite):
             if event.key == pygame.K_s:
                 self.vel.y = self.speed
 
-        # hero can't slide
+        # player can't slide
         elif event.type == pygame.KEYUP:
+            hero.image = pygame.image.load('images/Personaj_1.png')
+            self.counter = 0
             if event.key == pygame.K_d and self.vel.x > 0:
                 self.vel.x = 0
             elif event.key == pygame.K_a and self.vel.x < 0:
@@ -116,6 +118,14 @@ class Hero(pygame.sprite.Sprite):
         # Move the player.
         self.pos += self.vel
         self.rect.center = self.pos
+        keystate = pygame.key.get_pressed()
+        if keystate[pygame.K_d]:
+            self.counter = (self.counter + 1) % len(animate_right)
+            self.image = pygame.image.load(animate_right[self.counter])
+        elif keystate[pygame.K_a]:
+            self.counter = (self.counter + 1) % len(animate_right)
+            # change the image.
+            self.image = pygame.transform.flip(pygame.image.load(animate_right[self.counter]), True, False)
 
 
 def render_rects():
@@ -145,6 +155,9 @@ cur.execute('CREATE TABLE IF NOT EXISTS score('
             ')')
 con.commit()
 result = cur.execute('SELECT max_score FROM score').fetchone()
+# sprites
+animate_right = ['images/anim_right_1.png', 'images/anim_right_2.png', 'images/anim_right_3.png', 'images'
+                                                                                                  '/anim_right_4.png']
 
 
 # enemy = Hard_Enemy((0, 0), all_sprites)
@@ -189,6 +202,7 @@ def main():
                 intro_show = False
             if not intro_show:
                 hero.handle_event(event)
+                print('his')
         screen.fill((30, 30, 30))
         if not intro_show:
             all_sprites.update()
@@ -239,7 +253,7 @@ def main():
         else:
             start_screen()
         pygame.display.flip()
-        clock.tick(60)
+        clock.tick(30)
 
 
 if __name__ == '__main__':
