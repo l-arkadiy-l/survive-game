@@ -132,7 +132,7 @@ class Hero(pygame.sprite.Sprite):
             self.anim_right = (self.anim_right + 1) % len(animate_right)
             # change the image.
             self.image = pygame.transform.flip(pygame.image.load(animate_right[self.anim_right]), True, False)
-        if keystate[pygame.K_q]:
+        if keystate[pygame.K_SPACE]:
             self.anim_kick = (self.anim_kick + 1) % len(animate_kick)
             if self.move_right:
                 self.image = pygame.image.load(animate_kick[self.anim_kick])
@@ -180,12 +180,14 @@ def start_screen():
     if not result:
         intro_text = ["ЗАСТАВКА", "",
                       "Правила игры:",
-                      "Собирайте монеты и убивате врагов.",
+                      "ходить на w, s, a, d",
+                      "бить на space",
                       "Ваш рекорд: 0"]
     else:
         intro_text = ["ЗАСТАВКА", "",
                       "Правила игры:",
-                      "Собирайте монеты и убивате врагов.",
+                      "ходить на w, s, a, d",
+                      "бить на space",
                       "Ваш рекорд: {}".format(result[0])]
 
     fon = pygame.transform.scale(pygame.image.load('images/fon.png'), (WIDTH, HEIGHT))
