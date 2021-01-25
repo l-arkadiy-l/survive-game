@@ -74,8 +74,12 @@ class Hero(pygame.sprite.Sprite):
         self.speed = 15
         self.dollars = 0
         self.health = 3
-        self.counter = 0
+        self.anim_right = 0
+        self.anim_kick = 0
         self.image_health = pygame.image.load('images/health.png')
+        self.move_right = True
+        # enemy health -= 4
+        self.damage = 4
 
     def handle_event(self, event):
         # Move player
@@ -89,10 +93,12 @@ class Hero(pygame.sprite.Sprite):
             if event.key == pygame.K_s:
                 self.vel.y = self.speed
 
+
+
         # player can't slide
         elif event.type == pygame.KEYUP:
             hero.image = pygame.image.load('images/Personaj_1.png')
-            self.counter = 0
+            self.anim_right = 0
             if event.key == pygame.K_d and self.vel.x > 0:
                 self.vel.x = 0
             elif event.key == pygame.K_a and self.vel.x < 0:
@@ -120,12 +126,22 @@ class Hero(pygame.sprite.Sprite):
         self.rect.center = self.pos
         keystate = pygame.key.get_pressed()
         if keystate[pygame.K_d]:
-            self.counter = (self.counter + 1) % len(animate_right)
-            self.image = pygame.image.load(animate_right[self.counter])
+            self.move_right = True
+            self.anim_right = (self.anim_right + 1) % len(animate_right)
+            self.image = pygame.image.load(animate_right[self.anim_right])
         elif keystate[pygame.K_a]:
-            self.counter = (self.counter + 1) % len(animate_right)
+            self.move_right = False
+            self.anim_right = (self.anim_right + 1) % len(animate_right)
             # change the image.
-            self.image = pygame.transform.flip(pygame.image.load(animate_right[self.counter]), True, False)
+            self.image = pygame.transform.flip(pygame.image.load(animate_right[self.anim_right]), True, False)
+        if keystate[pygame.K_q]:
+            self.anim_kick = (self.anim_kick + 1) % len(animate_kick)
+            if self.move_right:
+                self.image = pygame.image.load(animate_kick[self.anim_kick])
+            else:
+                self.image = pygame.transform.flip(pygame.image.load(animate_kick[self.anim_kick]), True, False)
+                # align image
+                self.rect.x -= 75
 
 
 def render_rects():
@@ -158,6 +174,7 @@ result = cur.execute('SELECT max_score FROM score').fetchone()
 # sprites
 animate_right = ['images/anim_right_1.png', 'images/anim_right_2.png', 'images/anim_right_3.png', 'images'
                                                                                                   '/anim_right_4.png']
+animate_kick = ['images/anim_kick_1.png', 'images/anim_kick_2.png']
 
 
 # enemy = Hard_Enemy((0, 0), all_sprites)
@@ -202,7 +219,6 @@ def main():
                 intro_show = False
             if not intro_show:
                 hero.handle_event(event)
-                print('his')
         screen.fill((30, 30, 30))
         if not intro_show:
             all_sprites.update()
